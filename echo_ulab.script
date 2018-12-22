@@ -1,0 +1,137 @@
+Script started on Tue 13 Nov 2018 03:17:57 PM EST
+wasajana@itserver6:~/cs341/mp3$ ssh ulab
+wasajana@ulab's password: 
+Last login: Tue Nov 13 13:54:19 2018 from itserver6.cs.um
+Sun Microsystems Inc.   SunOS 5.8       Generic 64-bit  February 2000
+
+ Welcome to blade57.cs.umb.edu, a SunBlade 100 (uIIe-S128)
+
+                    Authorized users only.
+
+You have new mail.
+-------------------------------------------------------------------
+
+ERROR around line# 21 with modulefile 'mybin':
+        no files matched glob pattern "~wasajana/bin"
+
+An error occured while processing your module command.
+        -- Only changes pertaining to the 
+                'mybin' modulefile were not completed
+
+-------------------------------------------------------------------
+blade57(1)% pe
+pe: Command not found.
+blade57(2)% pwd
+/home/wasajana
+blade57(3)% cd cs341/mp3
+blade57(4)% ls -lg
+total 340
+-rw-r--r--   1 wasajana cs341-1G    12866 Nov  5 06:16 Rubric.docx
+-rwxr-xr-x   1 wasajana cs341-1G    29036 Nov 13 13:55 echo.lnx
+-rw-r--r--   1 wasajana cs341-1G      107 Nov 13 13:55 echo.opc
+-rw-r--r--   1 wasajana cs341-1G      627 Nov 13 14:04 echo.s
+-rw-r--r--   1 wasajana cs341-1G     1724 Nov 13 13:55 echo.syms
+-rw-r--r--   1 wasajana cs341-1G        0 Nov 13 15:17 echo_ulab.script
+-rw-r--r--   1 wasajana cs341-1G     1970 Nov 13 13:41 echo_vm.script
+-rw-r--r--   1 wasajana cs341-1G      713 Nov  5 06:16 echoc.c
+-rw-r--r--   1 wasajana cs341-1G     4013 Nov 13 13:55 echoc.opc
+-rw-r--r--   1 wasajana cs341-1G     2173 Nov  5 06:16 makefile
+-rw-r--r--   1 wasajana cs341-1G   267492 Nov  5 06:16 mp3.pdf
+lrwxrwxrwx   1 wasajana cs341-1G        9 Nov 13 13:55 syms -> echo.syms
+blade57(5)% make clean
+rm -f *.o *.opc *.syms *.lnx core syms
+blade57(6)% make A=echo
+/groups/ulab/bin/i386-as -o echo.opc echo.s
+/groups/ulab/bin/i386-gcc -g -Wall -Wno-implicit -Wshadow -I/groups/ulab/pcdev/include -c -o echoc.opc echoc.c
+-------------------------------------------------------------------
+
+ERROR around line# 21 with modulefile 'mybin':
+        no files matched glob pattern "~wasajana/bin"
+
+An error occured while processing your module command.
+        -- Only changes pertaining to the 
+                'mybin' modulefile were not completed
+
+-------------------------------------------------------------------
+-------------------------------------------------------------------
+
+ERROR around line# 21 with modulefile 'mybin':
+        no files matched glob pattern "~wasajana/bin"
+
+An error occured while processing your module command.
+        -- Only changes pertaining to the 
+                'mybin' modulefile were not completed
+
+-------------------------------------------------------------------
+/groups/ulab/bin/i386-ld -N -Ttext 1000e0 -o echo.lnx \
+        /groups/ulab/pcdev/lib/startup0.opc /groups/ulab/pcdev/lib/startup.opc \
+        echoc.opc echo.opc /groups/ulab/pcdev/lib/libc.a
+rm -f syms;/groups/ulab/bin/i386-nm -n echo.lnx>echo.syms;ln -s echo.syms syms
+blade57(7)% cat echoc.c
+/* echo.c: use assembly language i/o to echo console input */
+/* build with makefile in $pcex:  make A=echo      */
+
+#include <stdio.h>
+#include <serial.h>
+
+extern void echo(int conport, unsigned char esc_char);
+void main()
+{
+  int console = sys_get_console_dev(); /* find out current sys console */
+  int conport;
+  char escape;
+
+  switch (console) {
+  case COM1: conport = COM1_BASE;
+    break;
+  case COM2: conport = COM2_BASE;
+    break;
+  default: printf("Expected serial port for console, exiting\n");
+    return;
+  }
+
+  printf("Type escape character and enter\n");
+  if (scanf("%c\n", &escape) != 1)
+    escape = 's';
+  echo(conport, escape);
+  printf("\nEscape character typed - exiting.\n");
+  return;
+}
+blade57(8)% cat echo.s
+.text
+.globl _echo
+
+_echo:
+        pushl %ebp
+        movl %esp, %ebp
+        subl 8(%ebp), %esp
+        movl 8(%ebp), %edx
+
+LOOP1:
+        addl $5, %edx                   #get to the line status 
+
+LOOP2:
+        inb (%dx), %al                  #get data ready
+        andb  $0x01, %al                #read character
+        jz    LOOP2                     #if zero, do the loop again
+
+        subl $5, %edx                   #send edx to original position
+        inb  %dx, %al                   #read character
+        cmpb 12(%ebp), %al              #compares ebp and al 
+        jz DONE                         #if zero, go to done
+
+        outb %al, %dx                   #gives the result                       
+        jmp LOOP1                       #start the process all over
+
+DONE:   
+        movl %ebp, %esp                 #Give EBP the value of ESP which contains EAX
+        popb %ebp                               #Return the counter 
+        ret
+.end
+blade57(9)% exit
+logout
+Connection to ulab closed.
+wasajana@itserver6:~/cs341/mp3$ exit
+exit
+
+Script done on Tue 13 Nov 2018 03:19:10 PM EST
